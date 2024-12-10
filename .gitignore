@@ -1,0 +1,6 @@
+# Local installs.
+**/node_modules
+**/dist
+
+# Auto senerated.
+**/package-lock.json
