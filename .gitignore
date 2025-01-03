@@ -4,3 +4,6 @@
 
 # Auto senerated.
 **/package-lock.json
+
+client/expo-env.d.ts
+client/.expo/**
