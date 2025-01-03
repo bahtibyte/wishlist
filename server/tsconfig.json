@@ -1,18 +1,17 @@
 {
   "compilerOptions": {
-    "rootDirs": [
-      "src"
-    ],
-    "outDir": "dist",
-    "lib": [
-      "es2020"
-    ],
-    "target": "es2020",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "types": [
-      "node"
-    ]
-  }
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "target": "ES2019",
+    "strict": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
