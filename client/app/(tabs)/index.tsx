@@ -1,74 +1,162 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { Text } from 'react-native-paper';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+// Dummy data for feed items
+const feedItems = [
+  {
+    id: '1',
+    event: 'Birthday',
+    daysAway: 5,
+    user: {
+      name: 'Sarah Johnson',
+      avatar: '👩',
+    },
+    wishes: [
+      { id: '1', emoji: '📱' },
+      { id: '2', emoji: '💻' },
+      { id: '3', emoji: '🎮' },
+      { id: '4', emoji: '🎧' },
+    ],
+    color: '#FFB5E8',
+  },
+  {
+    id: '2',
+    event: 'Wedding',
+    daysAway: 12,
+    user: {
+      name: 'Mike Chen',
+      avatar: '👨',
+    },
+    wishes: [
+      { id: '1', emoji: '🏠' },
+      { id: '2', emoji: '✈️' },
+      { id: '3', emoji: '🍷' },
+      { id: '4', emoji: '🎁' },
+    ],
+    color: '#B5EAEA',
+  },
+  {
+    id: '3',
+    event: 'Graduation',
+    daysAway: 15,
+    user: {
+      name: 'Emma Wilson',
+      avatar: '👱‍♀️',
+    },
+    wishes: [
+      { id: '1', emoji: '📚' },
+      { id: '2', emoji: '💼' },
+      { id: '3', emoji: '⌚️' },
+      { id: '4', emoji: '🎓' },
+    ],
+    color: '#E7FFAC',
+  },
+  {
+    id: '4',
+    event: 'Christmas',
+    daysAway: 25,
+    user: {
+      name: 'John Smith',
+      avatar: '🧔',
+    },
+    wishes: [
+      { id: '1', emoji: '🎄' },
+      { id: '2', emoji: '🎁' },
+      { id: '3', emoji: '🧥' },
+      { id: '4', emoji: '⌚️' },
+    ],
+    color: '#FFC9DE',
+  },
+];
 
-export default function HomeScreen() {
+export default function HomeFeedScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ScrollView style={styles.container}>
+      {feedItems.map((item) => (
+        <View key={item.id} style={styles.feedItem}>
+          {/* Event Banner */}
+          <View style={[styles.banner, { backgroundColor: item.color }]}>
+            <Text style={styles.bannerText}>
+              Upcoming {item.event} in {item.daysAway} days
+            </Text>
+          </View>
+
+          {/* User Info and Wishes */}
+          <View style={styles.contentContainer}>
+            {/* User Info */}
+            <View style={styles.userInfo}>
+              <Text style={styles.avatar}>{item.user.avatar}</Text>
+              <Text style={styles.userName}>{item.user.name}</Text>
+            </View>
+
+            {/* Wishes ScrollView */}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.wishesContainer}
+            >
+              {item.wishes.map((wish) => (
+                <View key={wish.id} style={styles.wishItem}>
+                  <Text style={styles.wishEmoji}>{wish.emoji}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      ))}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  feedItem: {
+    backgroundColor: '#fff',
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  banner: {
+    padding: 12,
+    width: '100%',
+  },
+  bannerText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 12,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  avatar: {
+    fontSize: 24,
+    marginRight: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  userName: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  wishesContainer: {
+    marginLeft: 32, // Indent to align with username
+  },
+  wishItem: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wishEmoji: {
+    fontSize: 32,
   },
 });
