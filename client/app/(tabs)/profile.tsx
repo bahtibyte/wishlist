@@ -1,5 +1,6 @@
 import { View, ScrollView, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { Text, Avatar, Button } from 'react-native-paper';
+import { useAuth } from '../../context/auth';
 
 const events = [
   { id: '1', title: 'Birthday Party', daysAway: 5, color: '#FFB5E8' },
@@ -18,6 +19,8 @@ const wishes = [
 ];
 
 export default function ProfileScreen() {
+  const { signOut } = useAuth();
+
   const screenWidth = Dimensions.get('window').width;
   const imageSize = (screenWidth - 48) / 2; // 2 columns with padding
 
@@ -38,25 +41,32 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Followers</Text>
           </View>
         </View>
-        <Button 
-          mode="outlined" 
-          onPress={() => {}}
+        <Button
+          mode="outlined"
+          onPress={() => { }}
           style={styles.editButton}
         >
           Edit Profile
+        </Button>
+        <Button
+          mode="outlined"
+          onPress={signOut}
+          style={[styles.editButton, styles.signOutButton]}
+        >
+          Sign Out
         </Button>
       </View>
 
       {/* Events Section */}
       <Text style={styles.sectionTitle}>Upcoming Events</Text>
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.eventsContainer}
       >
         {events.map((event) => (
-          <View 
-            key={event.id} 
+          <View
+            key={event.id}
             style={[styles.eventCard, { backgroundColor: event.color }]}
           >
             <Text style={styles.eventTitle}>{event.title}</Text>
@@ -69,9 +79,9 @@ export default function ProfileScreen() {
       <Text style={styles.sectionTitle}>My Wishes</Text>
       <View style={styles.wishesGrid}>
         {wishes.map((wish) => (
-          <TouchableOpacity 
+          <TouchableOpacity
             key={wish.id}
-            onPress={() => {}}
+            onPress={() => { }}
             style={[styles.wishItem, { width: imageSize, height: imageSize }]}
           >
             <Text style={styles.wishEmoji}>{wish.emoji}</Text>
@@ -86,6 +96,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  button: {
+    flex: 1,
+  },
+  signOutButton: {
+    borderColor: '#ff4444',
   },
   profileSection: {
     padding: 20,
