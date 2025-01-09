@@ -1,19 +1,21 @@
+import 'react-native-get-random-values';
 import { createContext, useContext, useEffect, useState } from "react";
-import { Amplify } from "aws-amplify";
-import { signIn, signUp, confirmSignUp, signOut, getCurrentUser } from "aws-amplify/auth";
+import { 
+  CognitoIdentityProviderClient,
+  InitiateAuthCommand,
+  SignUpCommand,
+  ConfirmSignUpCommand,
+  GlobalSignOutCommand
+} from "@aws-sdk/client-cognito-identity-provider";
 
-// Configures AWS Authentication.
-Amplify.configure({
-  Auth: {
-    Cognito: {
-      userPoolId: 'YOUR_USER_POOL_ID',
-      userPoolClientId: 'YOUR_CLIENT_ID',
-    }
-  }
+const cognitoClient = new CognitoIdentityProviderClient({
+  region: "us-east-2"
 });
 
+const CLIENT_ID = 'CLIENT_ID';
+
 type AuthContextType = {
-  isAuthenticated: boolean | undefined;
+  isAuthenticated: boolean;
   user: any | null;
   signIn: (username: string, password: string) => Promise<void>;
   signUp: (username: string, password: string, email: string) => Promise<void>;
@@ -25,78 +27,80 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(undefined);
-  const [user, setUser] = useState<any | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const user = await getCurrentUser();
-      setUser(user);
-      setIsAuthenticated(true);
-    } catch (err) {
-      setUser(null);
-      setIsAuthenticated(false);
-    }
-  }
 
   const handleSignIn = async (username: string, password: string) => {
     try {
-      setIsAuthenticated(true);
-      /*
-      const { isSignedIn, nextStep } = await signIn({ username, password });
-      if (isSignedIn) {
-        const user = await getCurrentUser();
-        setUser(user);
+      const command = new InitiateAuthCommand({
+        AuthFlow: "USER_PASSWORD_AUTH",
+        ClientId: CLIENT_ID,
+        AuthParameters: {
+          USERNAME: username,
+          PASSWORD: password,
+        },
+      });
+
+      const response = await cognitoClient.send(command);
+      if (response.AuthenticationResult?.AccessToken) {
         setIsAuthenticated(true);
+        setUser({ username }); // You can decode the JWT token for more user info
         setError(null);
-      }*/
+      }
     } catch (err: any) {
-      setError(err.message || 'Error signing in');
+      setError(err.message);
       throw err;
     }
   };
 
   const handleSignUp = async (username: string, password: string, email: string) => {
     try {
-      await signUp({
-        username,
-        password,
-        options: {
-          userAttributes: {
-            email,
-          },
-        },
+      const command = new SignUpCommand({
+        ClientId: CLIENT_ID,
+        Username: username,
+        Password: password,
+        UserAttributes: [
+          { Name: "email", Value: email }
+        ],
       });
+      
+      await cognitoClient.send(command);
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Error signing up');
+      setError(err.message);
       throw err;
     }
   };
 
   const handleConfirmSignUp = async (username: string, code: string) => {
     try {
-      await confirmSignUp({ username, confirmationCode: code });
+      const command = new ConfirmSignUpCommand({
+        ClientId: CLIENT_ID,
+        Username: username,
+        ConfirmationCode: code,
+      });
+      
+      await cognitoClient.send(command);
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Error confirming sign up');
+      setError(err.message);
       throw err;
     }
   };
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      const command = new GlobalSignOutCommand({
+        AccessToken: user?.accessToken
+      });
+      
+      await cognitoClient.send(command);
       setUser(null);
       setIsAuthenticated(false);
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Error signing out');
+      setError(err.message);
       throw err;
     }
   };
@@ -115,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export const useAuth = () => useContext(AuthContext);

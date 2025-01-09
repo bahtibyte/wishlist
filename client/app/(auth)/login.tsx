@@ -25,6 +25,7 @@ export default function LoginScreen() {
         value={username}
         onChangeText={setUsername}
         style={styles.input}
+        autoCapitalize="none"
       />
       <TextInput
         label="Password"
