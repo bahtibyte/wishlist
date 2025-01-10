@@ -5,9 +5,9 @@ import {
   InitiateAuthCommand,
   SignUpCommand,
   ConfirmSignUpCommand,
-  GetUserCommand
+  GetUserCommand,
+  ResendConfirmationCodeCommand
 } from "@aws-sdk/client-cognito-identity-provider";
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const cognitoClient = new CognitoIdentityProviderClient({
@@ -21,10 +21,10 @@ type AuthContextType = {
   isAuthenticated: boolean;
   user: any | null;
   signIn: (username: string, password: string) => Promise<void>;
-  signUp: (username: string, password: string, email: string) => Promise<void>;
+  signUp: (email: string, username: string, password: string) => Promise<void>;
   confirmSignUp: (username: string, code: string) => Promise<void>;
+  resendConfirmEmail: (username: string) => Promise<void>;
   signOut: () => Promise<void>;
-  error: string | null;
 };
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -44,8 +44,8 @@ async function removeAccessToken() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [localPassword, setLocalPassword] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuthStatus();
@@ -83,49 +83,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           PASSWORD: password,
         },
       }));
+
+      setLocalPassword(password); // Save password even if wrong, for verification.
       if (response.AuthenticationResult?.AccessToken) {
         await saveAccessToken(response.AuthenticationResult?.AccessToken);
         setUser(username);
         setIsAuthenticated(true);
-        setError(null);
+        setLocalPassword(null);
       }
     } catch (err: any) {
-      setError(err.message);
       throw err;
     }
   };
 
-  const handleSignUp = async (username: string, password: string, email: string) => {
+  const handleSignUp = async (email: string, username: string, password: string) => {
     try {
-      const command = new SignUpCommand({
+      const response = await cognitoClient.send(new SignUpCommand({
         ClientId: CLIENT_ID,
         Username: username,
         Password: password,
         UserAttributes: [
           { Name: "email", Value: email }
         ],
-      });
-
-      await cognitoClient.send(command);
-      setError(null);
+      }));
+      setLocalPassword(password);
     } catch (err: any) {
-      setError(err.message);
       throw err;
     }
   };
 
   const handleConfirmSignUp = async (username: string, code: string) => {
     try {
-      const command = new ConfirmSignUpCommand({
+      await cognitoClient.send(new ConfirmSignUpCommand({
         ClientId: CLIENT_ID,
         Username: username,
         ConfirmationCode: code,
-      });
+      }));
 
-      await cognitoClient.send(command);
-      setError(null);
+      // If the password was saved and the code was correct, sign in to account.
+      if (localPassword) {
+        await handleSignIn(username, localPassword);
+      }
     } catch (err: any) {
-      setError(err.message);
+      throw err;
+    }
+  };
+
+  const handleResendConfirmEmail = async (username: string) => {
+    try {
+      await cognitoClient.send(new ResendConfirmationCodeCommand({
+        ClientId: CLIENT_ID,
+        Username: username,
+      }));
+    } catch (err: any) {
       throw err;
     }
   };
@@ -134,7 +144,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await removeAccessToken();
     setIsAuthenticated(false);
     setUser(null);
-    setError(null);
   };
 
   return (
@@ -146,8 +155,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn: handleSignIn,
         signUp: handleSignUp,
         confirmSignUp: handleConfirmSignUp,
+        resendConfirmEmail: handleResendConfirmEmail,
         signOut: handleSignOut,
-        error,
       }}
     >
       {children}

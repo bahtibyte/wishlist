@@ -29,7 +29,7 @@ function RootNavigation() {
     if (isAuthenticated && inAuthGroup) {
       router.replace('/(tabs)');
     } else if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)/login');
+      router.replace('/(auth)');
     }
   }, [isAuthenticated, segments]);
 
