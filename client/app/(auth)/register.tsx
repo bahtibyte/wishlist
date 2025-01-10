@@ -19,7 +19,7 @@ export default function CreateProfileScreen() {
 
   const handleCreate = async () => {
     try {
-      await signUp(email, username, password);
+      await signUp(name, email, username, password);
       // User needs to verify email, redirect to verification screen.
       router.push({
         pathname: '/(auth)/verification',

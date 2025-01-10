@@ -37,8 +37,6 @@ export default function VerificationScreen() {
   const handleVerification = async () => {
     try {
       await confirmSignUp(username, code);
-      // Add your verification API call here
-      console.log('Verifying code:', code);
     } catch (error: any) {
       setErrorMessage(error.message);
       setVisible(true);

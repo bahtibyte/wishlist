@@ -21,7 +21,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   user: any | null;
   signIn: (username: string, password: string) => Promise<void>;
-  signUp: (email: string, username: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, username: string, password: string) => Promise<void>;
   confirmSignUp: (username: string, code: string) => Promise<void>;
   resendConfirmEmail: (username: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -41,6 +41,16 @@ async function removeAccessToken() {
   await AsyncStorage.removeItem('accessToken');
 }
 
+function createUser(attributes: any, username: string) {
+  const name = attributes.find((attr: any) => attr.Name === 'custom:name');
+  const email = attributes.find((attr: any) => attr.Name === 'email');
+  return {
+    name: name?.Value,
+    email: email?.Value,
+    username: username
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -53,14 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     const token = await getAccessToken();
-
     try {
       if (token) {
         const response = await cognitoClient.send(new GetUserCommand({
           AccessToken: token
         }));
         if (response.Username) {
-          setUser(response.Username);
+          setUser(createUser(response.UserAttributes, response.Username));
           setIsAuthenticated(true);
         }
       }
@@ -87,8 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLocalPassword(password); // Save password even if wrong, for verification.
       if (response.AuthenticationResult?.AccessToken) {
         await saveAccessToken(response.AuthenticationResult?.AccessToken);
-        setUser(username);
-        setIsAuthenticated(true);
+        await checkAuthStatus();
         setLocalPassword(null);
       }
     } catch (err: any) {
@@ -96,14 +104,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleSignUp = async (email: string, username: string, password: string) => {
+  const handleSignUp = async (name: string, email: string, username: string, password: string) => {
     try {
-      const response = await cognitoClient.send(new SignUpCommand({
+      await cognitoClient.send(new SignUpCommand({
         ClientId: CLIENT_ID,
         Username: username,
         Password: password,
         UserAttributes: [
-          { Name: "email", Value: email }
+          { Name: "email", Value: email },
+          { Name: "custom:name", Value: name }
         ],
       }));
       setLocalPassword(password);
