@@ -34,10 +34,15 @@ function RootNavigation() {
   }, [isAuthenticated, segments]);
 
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        animation: 'none',
+        headerShown: false
+      }}
+    >
       {/* Authentication flow. */}
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      {/* Main application. */}
+      {/* Main application flow. */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       {/* Not found redirect. */}
       <Stack.Screen name="+not-found" />

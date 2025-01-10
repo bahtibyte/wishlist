@@ -1,10 +1,24 @@
 import { View, StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
+import { useAuth } from '@/context/auth';
+import CustomSplashScreen from '../splash-screen';
 
 export default function AuthScreen() {
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
+  // User data is still loading, show splash screen.
+  if (isLoading) {
+    return <CustomSplashScreen />;
+  }
+
+  // User is already authenticated, redirect to actual application.
+  if (isAuthenticated) {
+    return <Redirect href="/(tabs)"/>;
+  }
+
+  // User is not authenticated, display the authentication flow.
   return (
     <View style={styles.container}>
       <Button 
