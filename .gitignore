@@ -11,3 +11,6 @@ client/.expo/**
 client/expo-env.d.ts
 client/.gitignore
 client/.env
+
+server/.gitignore
+server/.env
