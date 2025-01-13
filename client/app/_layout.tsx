@@ -12,6 +12,7 @@ import { ApolloProvider } from '@apollo/client';
 import client from '@/apollo/client';
 
 import { AuthProvider, useAuth } from '@/context/auth';
+import { AppDataProvider } from '../context/app';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -67,13 +68,15 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ApolloProvider client={client}>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <RootNavigation />
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </ApolloProvider>
-    </AuthProvider>
+    <AppDataProvider>
+      <AuthProvider>
+        <ApolloProvider client={client}>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <RootNavigation />
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </ApolloProvider>
+      </AuthProvider>
+    </AppDataProvider>
   );
 }
