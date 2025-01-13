@@ -29,16 +29,33 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-async function saveAccessToken(token: string) {
-  await AsyncStorage.setItem('accessToken', token);
+type AuthToken = {
+  access: string;
+  refresh: string;
 }
 
-async function getAccessToken() {
-  return await AsyncStorage.getItem('accessToken');
+async function saveAuthToken(token: AuthToken) {
+  await AsyncStorage.setItem('accessToken', token.access!);
+  await AsyncStorage.setItem('refreshToken', token.refresh!);
 }
 
-async function removeAccessToken() {
+async function getAuthToken(): Promise<AuthToken | null> {
+  const accessToken = await AsyncStorage.getItem('accessToken');
+  const refreshToken = await AsyncStorage.getItem('refreshToken');
+
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
+
+  return {
+    access: accessToken,
+    refresh: refreshToken
+  }
+}
+
+async function removeAuthToken() {
   await AsyncStorage.removeItem('accessToken');
+  await AsyncStorage.removeItem('refreshToken');
 }
 
 function createUser(attributes: any, username: string) {
@@ -61,29 +78,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuthStatus();
   }, []);
 
-  const checkAuthStatus = async () => {
-    const token = await getAccessToken();
+  const checkAuthStatus = async (attemptRefresh: boolean = true) => {
+    console.log("[auth]: Checking authentication status.");
+    const token = await getAuthToken();
     try {
       if (token) {
         const response = await cognitoClient.send(new GetUserCommand({
-          AccessToken: token
+          AccessToken: token.access
         }));
         if (response.Username) {
+          console.log("[auth]: Tokens valid, logging into user.");
           setUser(createUser(response.UserAttributes, response.Username));
           setIsAuthenticated(true);
         }
+      } else {
+        console.log("[auth]: No token found, cache must be empty.");
       }
-    } catch (err) {
-      await removeAccessToken();
-      setUser(null);
-      setIsAuthenticated(false);
+    } catch (err: any) {
+      console.log("[auth]: Error checking authentication status", err);
+      if (attemptRefresh && err.name === 'NotAuthorizedException') {
+        await refreshTokens(); // Attempt to refresh tokens if not authorized.
+      } else {
+        console.log("[auth]: Token refresh attempt blocked, signing user out.");
+        await handleSignOut(); // Fully sign out if not authorized.
+      }
     } finally {
       setIsLoading(false);
     }
   }
 
+  const refreshTokens = async () => {
+    console.log("[auth]: Refreshing tokens.");
+    const token = await getAuthToken();
+    try {
+      if (token) {
+        const response = await cognitoClient.send(new InitiateAuthCommand({
+          AuthFlow: "REFRESH_TOKEN_AUTH",
+          ClientId: CLIENT_ID,
+          AuthParameters: {
+            REFRESH_TOKEN: token.refresh
+          },
+        }));
+        const authResult = response.AuthenticationResult;
+        if (authResult && authResult.AccessToken) {
+          console.log("[auth]: Tokens refreshed successfully, updating access token.");
+          await saveAuthToken({
+            access: authResult.AccessToken,
+            refresh: token.refresh
+          });
+          // Don't attempt to refresh again since tokens are refreshed.
+          await checkAuthStatus(false);
+        } else {
+          console.log("[auth]: Response does not contain access token, clearing cache.");
+          await handleSignOut();
+        }
+      } else {
+        console.log("[auth]: No refresh token found, cache must be empty.");
+      }
+    } catch (err: any) {
+      console.log("[auth]: Could not refresh tokens", err);
+      await handleSignOut();
+    }
+
+  }
+
   const handleSignIn = async (username: string, password: string) => {
     try {
+      console.log("[auth]: Signing in with username and password.");
       const response = await cognitoClient.send(new InitiateAuthCommand({
         AuthFlow: "USER_PASSWORD_AUTH",
         ClientId: CLIENT_ID,
@@ -94,8 +155,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }));
 
       setLocalPassword(password); // Save password even if wrong, for verification.
-      if (response.AuthenticationResult?.AccessToken) {
-        await saveAccessToken(response.AuthenticationResult?.AccessToken);
+
+      const authResult = response.AuthenticationResult;
+      if (authResult && authResult.AccessToken && authResult.RefreshToken) {
+        console.log("[auth]: Tokens received, saving and checking authentication status.");
+        await saveAuthToken({
+          access: authResult.AccessToken,
+          refresh: authResult.RefreshToken
+        });
         await checkAuthStatus();
         setLocalPassword(null);
       }
@@ -106,6 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleSignUp = async (name: string, email: string, username: string, password: string) => {
     try {
+      console.log("[auth]: Signing up with username and password.");
       await cognitoClient.send(new SignUpCommand({
         ClientId: CLIENT_ID,
         Username: username,
@@ -123,6 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleConfirmSignUp = async (username: string, code: string) => {
     try {
+      console.log("[auth]: Confirming sign up with username and code.");
       await cognitoClient.send(new ConfirmSignUpCommand({
         ClientId: CLIENT_ID,
         Username: username,
@@ -131,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // If the password was saved and the code was correct, sign in to account.
       if (localPassword) {
+        console.log("[auth]: Local password saved, signing in to account.");
         await handleSignIn(username, localPassword);
       }
     } catch (err: any) {
@@ -140,6 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleResendConfirmEmail = async (username: string) => {
     try {
+      console.log("[auth]: Resending confirmation email.");
       await cognitoClient.send(new ResendConfirmationCodeCommand({
         ClientId: CLIENT_ID,
         Username: username,
@@ -150,7 +221,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleSignOut = async () => {
-    await removeAccessToken();
+    console.log("[auth]: Signing out and clearing cache.");
+    await removeAuthToken();
     setIsAuthenticated(false);
     setUser(null);
   };
