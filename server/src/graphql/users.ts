@@ -1,4 +1,4 @@
-import { Client } from 'pg';
+import { PostgresContext } from '../db/db';
 
 export interface User {
   id: string;
@@ -19,7 +19,9 @@ export const schema = `#graphql
 
   input CreateUserInput {
     profile_name: String!
+    username: String!
     email: String!
+    icon: String!
   }
 
   type Mutation {
@@ -28,16 +30,13 @@ export const schema = `#graphql
 
   type Query {
     users: [User]
+    user(username: String!): User
   }
 `;
 
-interface Context {
-  db: Client;
-}
-
 export const resolver = {
   Query: {
-    users: async (_: any, __: any, { db }: Context) => {
+    users: async (_: any, __: any, { db }: PostgresContext) => {
       try {
         const result = await db.query('SELECT * FROM users');
         return result.rows;
@@ -46,14 +45,26 @@ export const resolver = {
         throw new Error('Failed to fetch users');
       }
     },
+    user: async (_: any, { username }: { username: string }, { db }: PostgresContext) => {
+      try {
+        const result = await db.query(
+          'SELECT * FROM users WHERE username = $1 LIMIT 1',
+          [username]
+        );
+        return result.rows.length === 1 ? result.rows[0] : null;
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        throw new Error('Failed to fetch user');
+      }
+    },
   },
   Mutation: {
-    createUser: async (_: any, { input }: any, { db }: Context) => {
+    createUser: async (_: any, { input }: any, { db }: PostgresContext) => {
       try {
-        const { profile_name, email } = input;
+        const { profile_name, username, email, icon } = input;
         const result = await db.query(
-          'INSERT INTO users(profile_name, email) VALUES($1, $2) RETURNING *',
-          [profile_name, email]
+          'INSERT INTO users(profile_name, username, email, icon) VALUES($1, $2, $3, $4) RETURNING *',
+          [profile_name, username, email, icon]
         );
         return result.rows[0];
       } catch (error) {

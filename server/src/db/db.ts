@@ -1,8 +1,9 @@
 import dotenv from 'dotenv'; dotenv.config();
+import { Client } from 'pg';
 import pg from 'pg';
 
 export interface PostgresContext {
-  db: pg.Client;
+  db: Client;
 }
 
 /**
