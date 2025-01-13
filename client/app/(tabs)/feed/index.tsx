@@ -69,7 +69,7 @@ const feedItems = [
   },
 ];
 
-export default function HomeFeedScreen() {
+export default function HomeScreen() {
   return (
     <ScrollView style={styles.container}>
       {feedItems.map((item) => (

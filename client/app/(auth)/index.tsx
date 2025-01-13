@@ -15,7 +15,7 @@ export default function AuthScreen() {
 
   // User is already authenticated, redirect to actual application.
   if (isAuthenticated) {
-    return <Redirect href="/(tabs)"/>;
+    return <Redirect href="/(tabs)/feed"/>;
   }
 
   // User is not authenticated, display the authentication flow.

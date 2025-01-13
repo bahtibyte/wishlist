@@ -27,7 +27,7 @@ function RootNavigation() {
     const inAuthGroup = segments[0] === '(auth)';
 
     if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/feed');
     } else if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)');
     }
