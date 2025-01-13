@@ -1,6 +1,7 @@
 import { View, ScrollView, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { Text, Avatar, Button } from 'react-native-paper';
-import { useAuth } from '../../context/auth';
+import { useAuth } from '../../../context/auth';
+import { router } from 'expo-router';
 
 const events = [
   { id: '1', title: 'Birthday Party', daysAway: 5, color: '#FFB5E8' },
@@ -43,7 +44,7 @@ export default function ProfileScreen() {
         </View>
         <Button
           mode="outlined"
-          onPress={() => { }}
+          onPress={() => router.push('/profile/edit')}
           style={styles.editButton}
         >
           Edit Profile
