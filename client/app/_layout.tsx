@@ -68,15 +68,15 @@ export default function RootLayout() {
   }
 
   return (
-    <AppDataProvider>
-      <AuthProvider>
-        <ApolloProvider client={client}>
+    <ApolloProvider client={client}>
+      <AppDataProvider>
+        <AuthProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <RootNavigation />
             <StatusBar style="auto" />
           </ThemeProvider>
-        </ApolloProvider>
-      </AuthProvider>
-    </AppDataProvider>
+        </AuthProvider>
+      </AppDataProvider>
+    </ApolloProvider>
   );
 }

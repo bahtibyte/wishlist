@@ -10,6 +10,12 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { GET_USER, CREATE_USER } from '../graphql/users';
+import { useAppData } from './app';
+
+import { User } from '@/graphql/types';
+import { useApolloClient } from '@apollo/client';
+
 const cognitoClient = new CognitoIdentityProviderClient({
   region: process.env.EXPO_PUBLIC_AWS_REGION
 });
@@ -19,7 +25,6 @@ const CLIENT_ID = process.env.EXPO_PUBLIC_AWS_COGNITO_CLIENT_ID;
 type AuthContextType = {
   isLoading: boolean;
   isAuthenticated: boolean;
-  user: any | null;
   signIn: (username: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, username: string, password: string) => Promise<void>;
   confirmSignUp: (username: string, code: string) => Promise<void>;
@@ -58,25 +63,78 @@ async function removeAuthToken() {
   await AsyncStorage.removeItem('refreshToken');
 }
 
-function createUser(attributes: any, username: string) {
+function getCreateUserInput(attributes: any, username: string) {
   const name = attributes.find((attr: any) => attr.Name === 'custom:name');
   const email = attributes.find((attr: any) => attr.Name === 'email');
+
+  if (!name || !email) {
+    throw new Error("Name or email not found in user attributes");
+  }
+
   return {
-    name: name?.Value,
-    email: email?.Value,
-    username: username
-  };
+    variables: {
+      input: {
+        profile_name: name.Value,
+        username: username,
+        email: email.Value,
+        icon: process.env.EXPO_PUBLIC_DEFAULT_USER_ICON
+      }
+    }
+  }
 }
+
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [localPassword, setLocalPassword] = useState<string | null>(null);
+
+  const { setUser } = useAppData();
+  const client = useApolloClient();
 
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  const setOrCreateUser = async (attributes: any, username: string) => {
+    try {
+      console.log("[auth]: Attempting to get user data for:", username);
+      const { data } = await client.query({
+        query: GET_USER,
+        variables: {
+          username: username
+        },
+      });
+
+      const user = data.user as User;
+      if (user) {
+        console.log("[auth]: valid user found, setting user:", user);
+        setUser(user);
+      } else {
+        console.log("[auth]: user is not found, creating a new user.");
+        const { data } = await client.mutate({
+          mutation: CREATE_USER,
+          ...getCreateUserInput(attributes, username)
+        });
+
+        const newUser = data.createUser as User;
+        if (newUser) {
+          console.log("[auth]: new user created, setting user:", newUser);
+          setUser(newUser);
+        } else {
+          throw new Error("Failed to create initial user.");
+        }
+      }
+    } catch (err: any) {
+      console.log("[auth]: error getting user from backend:", {
+        message: err.message,
+        networkError: err.networkError?.result,
+        graphQLErrors: err.graphQLErrors
+      });
+      console.log("[auth]: signing out and clearing cache.");
+      await handleSignOut();
+    }
+  }
 
   const checkAuthStatus = async (attemptRefresh: boolean = true) => {
     console.log("[auth]: Checking authentication status.");
@@ -88,8 +146,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }));
         if (response.Username) {
           console.log("[auth]: Tokens valid, logging into user.");
-          setUser(createUser(response.UserAttributes, response.Username));
           setIsAuthenticated(true);
+          await setOrCreateUser(response.UserAttributes, response.Username);
         }
       } else {
         console.log("[auth]: No token found, cache must be empty.");
@@ -224,7 +282,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("[auth]: Signing out and clearing cache.");
     await removeAuthToken();
     setIsAuthenticated(false);
-    setUser(null);
   };
 
   return (
@@ -232,7 +289,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         isLoading,
         isAuthenticated,
-        user,
         signIn: handleSignIn,
         signUp: handleSignUp,
         confirmSignUp: handleConfirmSignUp,
