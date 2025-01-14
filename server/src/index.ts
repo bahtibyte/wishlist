@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 const { json } = bodyParser;
+import { authMiddleware } from './auth.js';
 
 import { dbClient, PostgresContext, initializeDB } from './db/db.js';
 
@@ -15,25 +16,12 @@ const resolvers = [userResolver]
 
 const app = express();
 
-// Auth middleware
-const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ message: 'No authorization header' });
-  }
-
-  // TODO: add auth logic here. return if fail res.status(401).json({ message: 'Unauthorized' });
-
-  next();
-};
-
 // Apply middleware
 app.use(cors());
 app.use(json());
 
 // Public REST endpoints
-app.get('/api/ping', (req, res) => {
+app.get('/ping', (req, res) => {
   res.json({ status: 'ok' });
 });
 

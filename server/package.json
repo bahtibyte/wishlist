@@ -13,6 +13,8 @@
   "type": "module",
   "dependencies": {
     "@apollo/server": "^4.11.2",
+    "@aws-sdk/client-cognito-identity-provider": "^3.726.1",
+    "aws-jwt-verify": "^5.0.0",
     "cors": "^2.8.5",
     "graphql": "^16.9.0",
     "pg": "^8.13.1",
