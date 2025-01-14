@@ -13,11 +13,13 @@
   "type": "module",
   "dependencies": {
     "@apollo/server": "^4.11.2",
+    "cors": "^2.8.5",
     "graphql": "^16.9.0",
     "pg": "^8.13.1",
     "typeorm": "^0.3.20"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/node": "^22.10.1",
     "@types/pg": "^8.11.10",
     "ts-node": "^10.9.2",
