@@ -24,8 +24,15 @@ export const schema = `#graphql
     icon: String!
   }
 
+  input UpdateUserProfileInput {
+    id: ID!
+    profile_name: String!
+    icon: String!
+  }
+
   type Mutation {
     createUser(input: CreateUserInput!): User
+    updateUserProfile(input: UpdateUserProfileInput!): User
   }
 
   type Query {
@@ -70,6 +77,24 @@ export const resolver = {
       } catch (error) {
         console.error('Error creating user:', error);
         throw new Error('Failed to create user');
+      }
+    },
+    updateUserProfile: async (_: any, { input }: any, { db }: PostgresContext) => {
+      try {
+        const { id, profile_name, icon } = input;
+        const result = await db.query(
+          'UPDATE users SET profile_name = $1, icon = $2 WHERE id = $3 RETURNING *',
+          [profile_name, icon, id]
+        );
+        
+        if (result.rows.length === 0) {
+          throw new Error('User not found');
+        }
+        
+        return result.rows[0];
+      } catch (error) {
+        console.error('Error updating user profile:', error);
+        throw new Error('Failed to update user profile');
       }
     },
   }
