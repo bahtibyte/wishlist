@@ -2,6 +2,9 @@ import { View, ScrollView, StyleSheet, Dimensions, TouchableOpacity } from 'reac
 import { Text, Avatar, Button } from 'react-native-paper';
 import { useAuth } from '../../../context/auth';
 import { router } from 'expo-router';
+import { useAppData } from '@/context/app';
+import { useState, useEffect } from 'react';
+import { saveImageLocally, getLocalImage } from '../../../utils/storage';
 
 const events = [
   { id: '1', title: 'Birthday Party', daysAway: 5, color: '#FFB5E8' },
@@ -20,7 +23,33 @@ const wishes = [
 ];
 
 export default function ProfileScreen() {
+  const { user } = useAppData();
   const { signOut } = useAuth();
+  const [localIconUri, setLocalIconUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadLocalIcon = async () => {
+      if (user?.id && user?.icon) {
+        try {
+          // Check if we have the correct version stored locally
+          let localUri = await getLocalImage(user.id, user.icon);
+
+          // If not found locally or if the user's icon has changed, download it
+          if (!localUri) {
+            localUri = await saveImageLocally(user.icon, user.id);
+          }
+
+          setLocalIconUri(localUri);
+        } catch (error) {
+          console.error('Error loading local icon:', error);
+          // Fallback to remote URL if local storage fails
+          setLocalIconUri(user.icon);
+        }
+      }
+    };
+
+    loadLocalIcon();
+  }, [user?.id, user?.icon]);
 
   const screenWidth = Dimensions.get('window').width;
   const imageSize = (screenWidth - 48) / 2; // 2 columns with padding
@@ -29,17 +58,23 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container}>
       {/* Profile Section */}
       <View style={styles.profileSection}>
-        <View style={styles.avatarContainer}>
-          <Text style={styles.avatarEmoji}>👤</Text>
-        </View>
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>156</Text>
-            <Text style={styles.statLabel}>Wishes</Text>
+        <View style={styles.profileTopRow}>
+          <View style={styles.avatarContainer}>
+            {localIconUri ? (
+              <Avatar.Image size={80} source={{ uri: localIconUri }} />
+            ) : (
+              <Text style={styles.avatarEmoji}>👤</Text>
+            )}
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>2.3k</Text>
-            <Text style={styles.statLabel}>Followers</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>156</Text>
+              <Text style={styles.statLabel}>Wishes</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>2.3k</Text>
+              <Text style={styles.statLabel}>Followers</Text>
+            </View>
           </View>
         </View>
         <Button
@@ -110,6 +145,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
+  profileTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 15,
+    justifyContent: 'space-around',
+  },
   avatarContainer: {
     width: 80,
     height: 80,
@@ -117,17 +159,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   avatarEmoji: {
     fontSize: 40,
   },
   statsContainer: {
     flexDirection: 'row',
-    marginTop: 15,
-    marginBottom: 15,
+    alignItems: 'center',
   },
   statItem: {
-    marginHorizontal: 20,
+    marginHorizontal: 15,
     alignItems: 'center',
   },
   statNumber: {
