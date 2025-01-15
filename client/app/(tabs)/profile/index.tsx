@@ -29,22 +29,22 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     const loadLocalIcon = async () => {
-      if (user?.id && user?.icon) {
-        try {
-          // Check if we have the correct version stored locally
-          let localUri = await getLocalImage(user.id, user.icon);
+      if (!user) return;
 
-          // If not found locally or if the user's icon has changed, download it
-          if (!localUri) {
-            localUri = await saveImageLocally(user.icon, user.id);
-          }
+      try {
+        // Check if we have the correct version stored locally
+        let localUri = await getLocalImage(user.id, user.icon);
 
-          setLocalIconUri(localUri);
-        } catch (error) {
-          console.error('Error loading local icon:', error);
-          // Fallback to remote URL if local storage fails
-          setLocalIconUri(user.icon);
+        // If not found locally or if the user's icon has changed, download it
+        if (!localUri) {
+          localUri = await saveImageLocally(user.icon, user.id);
         }
+
+        setLocalIconUri(localUri);
+      } catch (error) {
+        console.error('Error loading local icon:', error);
+        // Fallback to remote URL if local storage fails
+        setLocalIconUri(user.icon);
       }
     };
 
@@ -66,14 +66,17 @@ export default function ProfileScreen() {
               <Text style={styles.avatarEmoji}>👤</Text>
             )}
           </View>
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>156</Text>
-              <Text style={styles.statLabel}>Wishes</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>2.3k</Text>
-              <Text style={styles.statLabel}>Followers</Text>
+          <View style={styles.userInfoContainer}>
+            <Text style={styles.profileName}>{user?.profile_name}</Text>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>156</Text>
+                <Text style={styles.statLabel}>Wishes</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>2.3k</Text>
+                <Text style={styles.statLabel}>Followers</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -163,6 +166,21 @@ const styles = StyleSheet.create({
   },
   avatarEmoji: {
     fontSize: 40,
+  },
+  userInfoContainer: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    marginLeft: 12,
+  },
+  username: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
   },
   statsContainer: {
     flexDirection: 'row',

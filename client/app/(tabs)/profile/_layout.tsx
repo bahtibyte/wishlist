@@ -1,6 +1,8 @@
 import { Stack } from 'expo-router';
-
+import { useAppData } from '@/context/app';
 export default function ProfileLayout() {
+  const {user} = useAppData();
+
   return (
     <Stack
       screenOptions={{
@@ -10,7 +12,7 @@ export default function ProfileLayout() {
       <Stack.Screen 
         name="index" 
         options={{ 
-          headerTitle: "Profile",
+          headerTitle: user ? user.username : "Profile",
         }} 
       />
       <Stack.Screen 

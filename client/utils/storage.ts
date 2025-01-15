@@ -21,8 +21,9 @@ const getMetadataPath = (userId: string) => {
   return `${METADATA_FOLDER}user_${userId}_metadata.json`;
 };
 
-export const getLocalImageUri = (userId: string) => {
-  return `${IMAGE_FOLDER}user_${userId}.jpg`;
+export const getLocalImageUri = (imageUrl: string) => {
+  const image = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+  return `${IMAGE_FOLDER}${image}.jpg`;
 };
 
 const saveMetadata = async (userId: string, imageUrl: string) => {
@@ -52,7 +53,7 @@ const getStoredMetadata = async (userId: string) => {
 
 export const saveImageLocally = async (imageUrl: string, userId: string): Promise<string> => {
   try {
-    const localUri = getLocalImageUri(userId);
+    const localUri = getLocalImageUri(imageUrl);
     await setupDirectories();
     
     // Download the file
@@ -74,7 +75,7 @@ export const saveImageLocally = async (imageUrl: string, userId: string): Promis
 
 export const getLocalImage = async (userId: string, currentImageUrl: string): Promise<string | null> => {
   try {
-    const localUri = getLocalImageUri(userId);
+    const localUri = getLocalImageUri(currentImageUrl);
     const [fileInfo, metadata] = await Promise.all([
       FileSystem.getInfoAsync(localUri),
       getStoredMetadata(userId)
