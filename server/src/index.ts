@@ -11,6 +11,8 @@ import { dbClient, PostgresContext, initializeDB } from './db/db.js';
 import { schema as userSchema } from "./graphql/users.js";
 import { resolver as userResolver } from "./graphql/users.js";
 
+import { upload, profile } from './api.js';
+
 const typeDefs = [userSchema]
 const resolvers = [userResolver]
 
@@ -21,15 +23,11 @@ app.use(cors());
 app.use(json());
 
 // Public REST endpoints
-app.get('/ping', (req, res) => {
-  res.json({ status: 'ok' });
-});
+app.get('/ping', (req, res) => { res.json({ status: 'ok' }); });
 
 // Private REST endpoints (with auth)
 app.use('/api/*', authMiddleware);
-app.get('/api/generate-signed-url', (req, res) => {
-  res.json({ message: 'This is a protected route' });
-});
+app.post('/api/profile', upload.single('image'), profile);
 
 // Setup Apollo Server
 const server = new ApolloServer<PostgresContext>({
