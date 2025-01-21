@@ -1,10 +1,25 @@
 import { PostgresContext } from '../db/db';
+import { getStats, Stats } from './stats.js';
 
 export interface User {
   id: number;
   profile_name: string;
   username: string;
   email: string;
+  icon: string;
+  stats: Stats;
+}
+
+export interface CreateUserInput {
+  profile_name: string;
+  username: string;
+  email: string;
+  icon: string;
+}
+
+export interface UpdateUserProfileInput {
+  id: number;
+  profile_name: string;
   icon: string;
 }
 
@@ -15,6 +30,7 @@ export const schema = `#graphql
     username: String
     email: String
     icon: String
+    stats: Stats
   }
 
   input CreateUserInput {
@@ -50,14 +66,17 @@ export const resolver = {
       return getUser(username, { db });
     },
   },
+  User: {
+    stats: async (parent: User, _: any, { db }: PostgresContext) => {
+      return await getStats(parent.id, { db });
+    }
+  },
   Mutation: {
-    createUser: async (_: any, { input }: any, { db }: PostgresContext) => {
-      const { profile_name, username, email, icon } = input;
-      return createUser(profile_name, username, email, icon, { db });
+    createUser: async (_: any, { input }: { input: CreateUserInput }, { db }: PostgresContext) => {
+      return createUser(input, { db });
     },
-    updateUserProfile: async (_: any, { input }: any, { db }: PostgresContext) => {
-      const { id, profile_name, icon } = input;
-      return updateUserProfile(id, profile_name, icon, { db });
+    updateUserProfile: async (_: any, { input }: { input: UpdateUserProfileInput }, { db }: PostgresContext) => {
+      return updateUserProfile(input, { db });
     },
   }
 };
@@ -85,8 +104,14 @@ export const getUser = async (username: string, { db }: PostgresContext) => {
   }
 }
 
-export const createUser = async (profile_name: string, username: string, email: string, icon: string, { db }: PostgresContext) => {
+export const createUser = async (input: CreateUserInput, { db }: PostgresContext) => {
   try {
+    const { profile_name, username, email, icon } = input;
+
+    // Check if user already exists, if so return user.
+    const user = await getUser(username, { db });
+    if (user) return user;
+
     const result = await db.query(
       'INSERT INTO users(profile_name, username, email, icon) VALUES($1, $2, $3, $4) RETURNING *',
       [profile_name, username, email, icon]
@@ -98,8 +123,9 @@ export const createUser = async (profile_name: string, username: string, email: 
   }
 }
 
-export const updateUserProfile = async (id: number, profile_name: string, icon: string, { db }: PostgresContext) => {
+export const updateUserProfile = async (input: UpdateUserProfileInput, { db }: PostgresContext) => {
   try {
+    const { id, profile_name, icon } = input;
     const result = await db.query(
       'UPDATE users SET profile_name = $1, icon = $2 WHERE id = $3 RETURNING *',
       [profile_name, icon, id]
@@ -112,4 +138,4 @@ export const updateUserProfile = async (id: number, profile_name: string, icon: 
     console.error('Error updating user profile:', error);
     throw new Error('Failed to update user profile');
   }
-}
+  }

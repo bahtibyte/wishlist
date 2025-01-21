@@ -11,10 +11,13 @@ import { dbClient, PostgresContext, initializeDB } from './db/db.js';
 import { schema as userSchema } from "./graphql/users.js";
 import { resolver as userResolver } from "./graphql/users.js";
 
+import { schema as statsSchema } from "./graphql/stats.js"; 
+import { resolver as statsResolver } from "./graphql/stats.js";
+
 import { upload, profile } from './api.js';
 
-const typeDefs = [userSchema]
-const resolvers = [userResolver]
+const typeDefs = [userSchema, statsSchema]
+const resolvers = [userResolver, statsResolver]
 
 const app = express();
 

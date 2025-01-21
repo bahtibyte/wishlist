@@ -2,7 +2,7 @@ import AWS from 'aws-sdk';
 import multer from 'multer';
 
 import { updateUserProfile, User } from "./graphql/users.js";
-import { getUser } from "./graphql/users.js";
+import { getUser, UpdateUserProfileInput } from "./graphql/users.js";
 import { dbClient } from './db/db.js';
 
 // Setup S3 client access.
@@ -58,8 +58,14 @@ export const profile = async (req: any, res: any) => {
       }
     }
 
+    const input: UpdateUserProfileInput = {
+      id: user.id,
+      profile_name: user.profile_name,
+      icon: user.icon
+    };
+
     // Update the user in the database.
-    const updatedUser = await updateUserProfile(user.id, user.profile_name, user.icon, { db: dbClient });
+    const updatedUser = await updateUserProfile(input, { db: dbClient });
 
     res.json({
       message: 'Profile updated successfully',
