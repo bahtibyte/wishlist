@@ -21,6 +21,12 @@ export default function ProfileLayout() {
           headerTitle: 'Edit Profile',
         }}
       />
+       <Stack.Screen 
+        name="friends"
+        options={{
+          headerTitle: 'Friends',
+        }}
+      />
     </Stack>
   );
 } 

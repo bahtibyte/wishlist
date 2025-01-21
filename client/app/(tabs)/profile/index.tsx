@@ -1,8 +1,9 @@
 import { View, ScrollView, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import { Text, Button } from 'react-native-paper';
-import { useAuth } from '../../../context/auth';
+import { Text, Button, Portal, Dialog, IconButton } from 'react-native-paper';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { useAppData } from '@/context/app';
+import { useAuth } from '../../../context/auth';
 import CachedImage from '@/utils/cached-image';
 
 const events = [
@@ -24,6 +25,7 @@ const wishes = [
 export default function ProfileScreen() {
   const { user } = useAppData();
   const { signOut } = useAuth();
+  const [showDialog, setShowDialog] = useState(false);
 
   const screenWidth = Dimensions.get('window').width;
   const imageSize = (screenWidth - 48) / 2; // 2 columns with padding
@@ -40,30 +42,57 @@ export default function ProfileScreen() {
             <Text style={styles.profileName}>{user?.profile_name}</Text>
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>156</Text>
-                <Text style={styles.statLabel}>Wishes</Text>
+                <Text style={styles.statNumber}>{user?.stats.events ?? 0}</Text>
+                <Text style={styles.statLabel}>Events</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>2.3k</Text>
-                <Text style={styles.statLabel}>Followers</Text>
+                <Text style={styles.statNumber}>{user?.stats.wishes ?? 0}</Text>
+                <Text style={styles.statLabel}>Wishes</Text>
               </View>
+              <TouchableOpacity
+                style={styles.statItem}
+                onPress={() => router.push('/profile/friends')}
+              >
+                <Text style={styles.statNumber}>{user?.stats.friends ?? 0}</Text>
+                <Text style={styles.statLabel}>Friends</Text>
+              </TouchableOpacity>
+              <IconButton
+                icon="cog"
+                size={24}
+                onPress={() => setShowDialog(true)}
+                style={styles.settingsButton}
+              />
             </View>
           </View>
         </View>
-        <Button
-          mode="outlined"
-          onPress={() => router.push('/profile/edit')}
-          style={styles.editButton}
-        >
-          Edit Profile
-        </Button>
-        <Button
-          mode="outlined"
-          onPress={signOut}
-          style={[styles.editButton, styles.signOutButton]}
-        >
-          Sign Out
-        </Button>
+        <Portal>
+          <Dialog visible={showDialog} onDismiss={() => setShowDialog(false)}>
+            <Dialog.Title>Settings</Dialog.Title>
+            <Dialog.Content>
+              <Button
+                mode="text"
+                onPress={() => {
+                  setShowDialog(false);
+                  router.push('/profile/edit');
+                }}
+                style={styles.dialogButton}
+              >
+                Edit Profile
+              </Button>
+              <Button
+                mode="text"
+                onPress={() => {
+                  setShowDialog(false);
+                  signOut();
+                }}
+                textColor="#ff4444"
+                style={styles.dialogButton}
+              >
+                Sign Out
+              </Button>
+            </Dialog.Content>
+          </Dialog>
+        </Portal>
       </View>
 
       {/* Events Section */}
@@ -155,6 +184,8 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    flex: 1,
   },
   statItem: {
     marginHorizontal: 15,
@@ -214,5 +245,16 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
+  },
+  nameAndSettingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dialogButton: {
+    padding: 10,
+  },
+  settingsButton: {
+    marginLeft: 'auto',
   },
 });

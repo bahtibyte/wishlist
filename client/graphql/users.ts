@@ -8,6 +8,11 @@ export const GET_USER = gql`
       email
       username
       icon
+      stats {
+        events
+        wishes
+        friends
+      }
     }
   }
 `;

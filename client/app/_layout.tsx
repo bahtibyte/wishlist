@@ -1,12 +1,10 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
+import { PaperProvider } from 'react-native-paper';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
 
 import { ApolloProvider } from '@apollo/client';
 import client from '@/apollo/client';
@@ -52,7 +50,6 @@ function RootNavigation() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -68,15 +65,15 @@ export default function RootLayout() {
   }
 
   return (
-    <ApolloProvider client={client}>
-      <AppDataProvider>
-        <AuthProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <PaperProvider>
+      <ApolloProvider client={client}>
+        <AppDataProvider>
+          <AuthProvider>
             <RootNavigation />
             <StatusBar style="auto" />
-          </ThemeProvider>
-        </AuthProvider>
-      </AppDataProvider>
-    </ApolloProvider>
+          </AuthProvider>
+        </AppDataProvider>
+      </ApolloProvider>
+    </PaperProvider>
   );
 }
