@@ -29,6 +29,8 @@
     "expo-constants": "~17.0.3",
     "expo-font": "~13.0.2",
     "expo-haptics": "~14.0.0",
+    "expo-image-manipulator": "~13.0.6",
+    "expo-image-picker": "~16.0.4",
     "expo-linking": "~7.0.3",
     "expo-router": "~4.0.15",
     "expo-splash-screen": "~0.29.18",
@@ -48,9 +50,7 @@
     "react-native-screens": "~4.4.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "react-navigation": "^5.0.0",
-    "expo-image-picker": "~16.0.4",
-    "expo-image-manipulator": "~13.0.6"
+    "react-navigation": "^5.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

@@ -1,10 +1,9 @@
 import { View, ScrollView, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import { Text, Avatar, Button } from 'react-native-paper';
+import { Text, Button } from 'react-native-paper';
 import { useAuth } from '../../../context/auth';
 import { router } from 'expo-router';
 import { useAppData } from '@/context/app';
-import { useState, useEffect } from 'react';
-import { saveImageLocally, getLocalImage } from '../../../utils/storage';
+import CachedImage from '@/utils/cached-image';
 
 const events = [
   { id: '1', title: 'Birthday Party', daysAway: 5, color: '#FFB5E8' },
@@ -25,31 +24,6 @@ const wishes = [
 export default function ProfileScreen() {
   const { user } = useAppData();
   const { signOut } = useAuth();
-  const [localIconUri, setLocalIconUri] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadLocalIcon = async () => {
-      if (!user) return;
-
-      try {
-        // Check if we have the correct version stored locally
-        let localUri = await getLocalImage(user.id, user.icon);
-
-        // If not found locally or if the user's icon has changed, download it
-        if (!localUri) {
-          localUri = await saveImageLocally(user.icon, user.id);
-        }
-
-        setLocalIconUri(localUri);
-      } catch (error) {
-        console.error('Error loading local icon:', error);
-        // Fallback to remote URL if local storage fails
-        setLocalIconUri(user.icon);
-      }
-    };
-
-    loadLocalIcon();
-  }, [user?.id, user?.icon]);
 
   const screenWidth = Dimensions.get('window').width;
   const imageSize = (screenWidth - 48) / 2; // 2 columns with padding
@@ -60,11 +34,7 @@ export default function ProfileScreen() {
       <View style={styles.profileSection}>
         <View style={styles.profileTopRow}>
           <View style={styles.avatarContainer}>
-            {localIconUri ? (
-              <Avatar.Image size={80} source={{ uri: localIconUri }} />
-            ) : (
-              <Text style={styles.avatarEmoji}>👤</Text>
-            )}
+            {user && <CachedImage source={user.icon} size={80} />}
           </View>
           <View style={styles.userInfoContainer}>
             <Text style={styles.profileName}>{user?.profile_name}</Text>
@@ -239,5 +209,10 @@ const styles = StyleSheet.create({
   },
   wishEmoji: {
     fontSize: 40,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
 });
