@@ -1,23 +1,11 @@
-import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 const { json } = bodyParser;
 import { authMiddleware } from './auth.js';
-
-import { dbClient, PostgresContext, initializeDB } from './db/db.js';
-
-import { schema as userSchema } from "./graphql/users.js";
-import { resolver as userResolver } from "./graphql/users.js";
-
-import { schema as statsSchema } from "./graphql/stats.js"; 
-import { resolver as statsResolver } from "./graphql/stats.js";
-
 import { upload, profile } from './api.js';
 
-const typeDefs = [userSchema, statsSchema]
-const resolvers = [userResolver, statsResolver]
+import { apolloMiddleware } from './apollo.js';
 
 const app = express();
 
@@ -32,22 +20,8 @@ app.get('/ping', (req, res) => { res.json({ status: 'ok' }); });
 app.use('/api/*', authMiddleware);
 app.post('/api/profile', upload.single('image'), profile);
 
-// Setup Apollo Server
-const server = new ApolloServer<PostgresContext>({
-  typeDefs,
-  resolvers,
-});
-
-// Initialize the database and server connections.
-await initializeDB();
-await server.start();
-
 // TODO: Add auth requirements to apollo server.
-app.use('/graphql', expressMiddleware(server, {
-  context: async () => ({
-    db: dbClient
-  })
-}));
+app.use('/graphql', apolloMiddleware);
 
 // Start the server
 const PORT = 4000;

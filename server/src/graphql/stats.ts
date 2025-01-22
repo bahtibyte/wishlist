@@ -1,4 +1,4 @@
-import { PostgresContext } from '../db/db';
+import { PostgresContext } from '../rds';
 
 export interface Stats {
   id: number;

@@ -3,7 +3,7 @@ import multer from 'multer';
 
 import { updateUserProfile, User } from "./graphql/users.js";
 import { getUser, UpdateUserProfileInput } from "./graphql/users.js";
-import { dbClient } from './db/db.js';
+import { rds } from './rds.js';
 
 // Setup S3 client access.
 const s3 = new AWS.S3({
@@ -39,7 +39,7 @@ export const profile = async (req: any, res: any) => {
     const icon = req.file;
 
     // Query the user using the same function as the GraphQL resolver
-    const user = await getUser(username, { db: dbClient }) as User;
+    const user = await getUser(username, { db: rds }) as User;
 
     if (profile_name) {
       user.profile_name = profile_name;
@@ -65,7 +65,7 @@ export const profile = async (req: any, res: any) => {
     };
 
     // Update the user in the database.
-    const updatedUser = await updateUserProfile(input, { db: dbClient });
+    const updatedUser = await updateUserProfile(input, { db: rds });
 
     res.json({
       message: 'Profile updated successfully',

@@ -9,7 +9,7 @@ export interface PostgresContext {
 /**
  * AWS RDS Postgres database client.
  */
-export const dbClient = new pg.Client({
+export const rds = new pg.Client({
   user: process.env.NODE_DB_USER!,
   password: process.env.NODE_DB_PASSWORD!,
   database: process.env.NODE_DB_DATABASE!,
@@ -26,8 +26,8 @@ export const dbClient = new pg.Client({
 export async function initializeDB() {
   try {
     console.log("Initializing database connection to AWS RDS Postgres.");
-    await dbClient.connect();
-    console.log("Successfully connected to AWS RDS Postgres.");
+    await rds.connect();
+    return rds;
   } catch (err) {
     console.error('Error connecting to the database:', err);
   }

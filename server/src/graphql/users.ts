@@ -1,4 +1,4 @@
-import { PostgresContext } from '../db/db';
+import { PostgresContext } from '../rds';
 import { getStats, Stats } from './stats.js';
 
 export interface User {
