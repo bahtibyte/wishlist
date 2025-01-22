@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useAppData } from '@/context/app';
 
-export default function ProfileLayout() {
+export default function CreateLayout() {
   const { user } = useAppData();
 
   return (
@@ -13,27 +13,15 @@ export default function ProfileLayout() {
       <Stack.Screen
         name="index"
         options={{
-          headerTitle: user ? user.username : "Profile",
-        }}
-      />
-      <Stack.Screen
-        name="edit"
-        options={{
-          headerTitle: 'Edit Profile',
-        }}
-      />
-      <Stack.Screen
-        name="friends"
-        options={{
-          headerTitle: 'Friends',
+          headerTitle: "Create",
         }}
       />
       <Stack.Screen
         name="event/[id]"
         options={{
-          headerTitle: 'Event Details',
+          headerTitle: "Event Details",
         }}
       />
     </Stack>
   );
-} 
+}

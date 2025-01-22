@@ -12,3 +12,12 @@ export interface Stats {
   wishes: number;
   friends: number;
 }
+
+export interface Event {
+  id: number;
+  user_id: number;
+  event_type: string;
+  event_date: Date;
+  timezone: string;
+  color: string;
+}

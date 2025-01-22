@@ -40,10 +40,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="create/index"
+        name="create"
         options={{
           title: 'Create',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.circle.fill" color={color} />,
+          headerShown: false,
         }}
       />
       <Tabs.Screen

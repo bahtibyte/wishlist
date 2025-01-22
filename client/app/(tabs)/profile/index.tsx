@@ -5,13 +5,10 @@ import { useState } from 'react';
 import { useAppData } from '@/context/app';
 import { useAuth } from '../../../context/auth';
 import CachedImage from '@/utils/cached-image';
-
-const events = [
-  { id: '1', title: 'Birthday Party', daysAway: 5, color: '#FFB5E8' },
-  { id: '2', title: 'Wedding', daysAway: 12, color: '#B5EAEA' },
-  { id: '3', title: 'Graduation', daysAway: 25, color: '#E7FFAC' },
-  { id: '4', title: 'Christmas', daysAway: 45, color: '#FFC9DE' },
-];
+import { GET_EVENTS } from '@/graphql/events';
+import { useQuery } from '@apollo/client';
+import { Event } from '@/graphql/types';
+import { parseEventResponse } from '@/graphql/parser';
 
 const wishes = [
   { id: '1', emoji: '📱' },
@@ -22,10 +19,36 @@ const wishes = [
   { id: '6', emoji: '📚' },
 ];
 
+const calculateDaysAway = (eventDate: Date): number => {
+  const today = new Date();
+  // Reset time portion for accurate day calculation
+  today.setHours(0, 0, 0, 0);
+  eventDate.setHours(0, 0, 0, 0);
+
+  return Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+};
+
+const eventDaysAwayText = (eventDate: Date): string => {
+  const daysAway = calculateDaysAway(eventDate);
+  if (daysAway === 0) return "Today";
+  if (daysAway === 1) return "Tomorrow";
+  return `${daysAway} days away`;
+}
+
 export default function ProfileScreen() {
-  const { user } = useAppData();
+  const { user, events, setEvents } = useAppData();
   const { signOut } = useAuth();
   const [showDialog, setShowDialog] = useState(false);
+
+  // Load the events for the user.
+  useQuery(GET_EVENTS, {
+    variables: { user_id: user?.id },
+    skip: !user,
+    onCompleted: (data) => {
+      const parsedEvents = data.events.map((event: Event) => parseEventResponse(event));
+      setEvents(parsedEvents);
+    }
+  })
 
   const screenWidth = Dimensions.get('window').width;
   const imageSize = (screenWidth - 48) / 2; // 2 columns with padding
@@ -102,15 +125,21 @@ export default function ProfileScreen() {
         showsHorizontalScrollIndicator={false}
         style={styles.eventsContainer}
       >
-        {events.map((event) => (
-          <View
-            key={event.id}
-            style={[styles.eventCard, { backgroundColor: event.color }]}
-          >
-            <Text style={styles.eventTitle}>{event.title}</Text>
-            <Text style={styles.eventDays}>{event.daysAway} days away</Text>
-          </View>
-        ))}
+        {events
+          .filter(event => calculateDaysAway(event.event_date) >= 0)
+          .sort((a, b) => a.event_date.getTime() - b.event_date.getTime())
+          .map((event: Event) => (
+            <TouchableOpacity
+              key={event.id}
+              onPress={() => router.push(`/profile/event/${event.id}`)}
+            >
+              <View style={[styles.eventCard, { backgroundColor: event.color }]} >
+                <Text style={styles.eventTitle}>{event.event_type}</Text>
+                <Text style={styles.eventDays}>{eventDaysAwayText(event.event_date)}</Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        }
       </ScrollView>
 
       {/* Wishes Grid Section */}
